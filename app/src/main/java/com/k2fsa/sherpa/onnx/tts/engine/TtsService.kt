@@ -1,7 +1,5 @@
 package com.k2fsa.sherpa.onnx.tts.engine
 
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.media.AudioFormat
 import android.speech.tts.SynthesisCallback
 import android.speech.tts.SynthesisRequest
@@ -14,9 +12,10 @@ class TtsService : TextToSpeechService() {
     override fun onCreate() {
         Log.i(TAG, "onCreate tts service")
         super.onCreate()
-
+        val preferenceHelper = PreferenceHelper(this)
+        val language = preferenceHelper.getCurrentLanguage()
         // see https://github.com/Miserlou/Android-SDK-Samples/blob/master/TtsEngine/src/com/example/android/ttsengine/RobotSpeakTtsService.java#L68
-        onLoadLanguage(TtsEngine.lang, "", "")
+        onLoadLanguage(language, "", "")
     }
 
     override fun onDestroy() {
@@ -27,12 +26,11 @@ class TtsService : TextToSpeechService() {
     // https://developer.android.com/reference/kotlin/android/speech/tts/TextToSpeechService#onislanguageavailable
     override fun onIsLanguageAvailable(_lang: String?, _country: String?, _variant: String?): Int {
         val lang = _lang ?: ""
-
-        if (TtsEngine.getAvailableLanguages(this).contains(lang)) {
-            return TextToSpeech.LANG_AVAILABLE
+        return if (TtsEngine.getAvailableLanguages(this).contains(lang)) {
+            TextToSpeech.LANG_AVAILABLE
+        } else {
+            TextToSpeech.LANG_NOT_SUPPORTED
         }
-
-        return TextToSpeech.LANG_NOT_SUPPORTED
     }
 
     override fun onGetLanguage(): Array<String> {  //returns language currently being used
@@ -45,10 +43,7 @@ class TtsService : TextToSpeechService() {
         val lang = _lang ?: ""
         Migrate.renameModelFolder(this)   //Rename model folder if "old" structure
         val preferenceHelper = PreferenceHelper(this)
-        return if (preferenceHelper.getCurrentLanguage().equals("")){  //Download model first if no model is installed
-            val intent = Intent(this, MainActivity::class.java)
-            intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
+        return if (preferenceHelper.getCurrentLanguage().equals("")){
             TextToSpeech.LANG_MISSING_DATA
         } else {
             if (TtsEngine.getAvailableLanguages(this).contains(lang)) {
@@ -65,6 +60,7 @@ class TtsService : TextToSpeechService() {
     override fun onStop() {}
 
     override fun onSynthesizeText(request: SynthesisRequest?, callback: SynthesisCallback?) {
+        Log.i(TAG, "onSynthesizeText")
         if (TtsEngine.tts == null || request == null || callback == null) {
             return
         }
@@ -72,6 +68,14 @@ class TtsService : TextToSpeechService() {
         val country = request.country
         val variant = request.variant
         var pitch = 100f
+
+        val ret = onIsLanguageAvailable(language, country, variant)
+        if (ret == TextToSpeech.LANG_NOT_SUPPORTED) {
+            callback.error()
+            return
+        } else {
+            TtsEngine.createTts(application, language)
+        }
 
         val preferenceHelper = PreferenceHelper(this)
 
@@ -84,11 +88,7 @@ class TtsService : TextToSpeechService() {
 
         if (preferenceHelper.getStripSSML()) text = TtsEngine.stripSsmlTags(text)
 
-        val ret = onIsLanguageAvailable(language, country, variant)
-        if (ret == TextToSpeech.LANG_NOT_SUPPORTED) {
-            callback.error()
-            return
-        }
+
 
         val tts = TtsEngine.tts!!
 

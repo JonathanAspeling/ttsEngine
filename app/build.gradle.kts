@@ -73,4 +73,5 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
     implementation("com.github.woheller69:FreeDroidWarn:+")
     implementation("org.jsoup:jsoup:1.22.1")
+    implementation ("androidx.work:work-runtime:2.10.2")
 }

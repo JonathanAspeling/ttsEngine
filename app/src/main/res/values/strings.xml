@@ -29,4 +29,5 @@
     <string name="language_code_error">Invalid language code. Please enter a 3-letter code.</string>
     <string name="language_already_installed">Language already installed</string>
     <string name="error_copying_files">Error copying files</string>
+    <string name="preload_model">Preload model after boot</string>
 </resources>

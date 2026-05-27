@@ -1,7 +1,6 @@
 package com.k2fsa.sherpa.onnx.tts.engine
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,6 +34,7 @@ object TtsEngine {
     private var dataDir: String = "espeak-ng-data"
     private var dictDir: String? = null
 
+    @JvmStatic
     fun getAvailableLanguages(context: Context): ArrayList<String> {
         val langCodes = java.util.ArrayList<String>()
         val db = LangDB.getInstance(context)
@@ -49,6 +49,7 @@ object TtsEngine {
         return Jsoup.parse(text).text().trim()
     }
 
+    @JvmStatic
     fun createTts(context: Context, language: String) {
         if (tts == null || lang != language) {
             if (ttsCache.containsKey(language)) {
@@ -58,6 +59,8 @@ object TtsEngine {
             } else {
                 initTts(context, language)
             }
+        } else {
+            Log.i(TAG, "Already loaded: " + language)
         }
     }
 

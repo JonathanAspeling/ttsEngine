@@ -18,4 +18,5 @@
     <string name="apply_system_speed">Einstellungen des Systems (Geschwindigkeit / Tonlage) bei Verwendung als systemweite Sprachausgabe anwenden</string>
     <string name="volume">Lautstärke</string>
     <string name="one_model_per_language">Nur 1 Modell je Sprache!</string>
+    <string name="preload_model">Model nach Neustart vorab laden</string>
 </resources>

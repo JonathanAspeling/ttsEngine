@@ -265,6 +265,34 @@ class MainActivity : ComponentActivity() {
                             item { Spacer(modifier = Modifier.height(10.dp)) }
 
                             item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    var preloadModel by remember {
+                                        mutableStateOf(
+                                            preferenceHelper.getPreloadModel()
+                                        )
+                                    }
+                                    Checkbox(
+                                        checked = preloadModel,
+                                        onCheckedChange = { isChecked ->
+                                            preferenceHelper.setPreloadModel(isChecked)
+                                            preloadModel = isChecked
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = colorResource(R.color.primaryDark)
+                                        )
+                                    )
+                                    Text(
+                                        getString(R.string.preload_model)
+                                    )
+                                }
+                            }
+
+
+                            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+                            item {
                                 Box(modifier = Modifier.fillMaxWidth()) {
                                     var expanded by remember { mutableStateOf(false) }
                                     ExposedDropdownMenuBox(

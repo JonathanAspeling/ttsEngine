@@ -10,6 +10,7 @@ class PreferenceHelper(context: Context) {
     private val INIT_KEY = "init_espeak"
     private val USE_SYSTEM_SPEED = "apply_system_speed"
     private val STRIP_SSML = "strip_ssml"
+    private val PRELOAD_MODEL = "preload_model"
     private val CURRENT_LANGUAGE = "current_language"
     private val VOLUME = "volume"
 
@@ -54,6 +55,16 @@ class PreferenceHelper(context: Context) {
 
     fun getStripSSML(): Boolean {
         return sharedPreferences.getBoolean(STRIP_SSML, false)
+    }
+
+    fun setPreloadModel(preloadModel: Boolean){
+        val editor = sharedPreferences.edit()
+        editor.putBoolean(PRELOAD_MODEL, preloadModel)
+        editor.apply()
+    }
+
+    fun getPreloadModel(): Boolean {
+        return sharedPreferences.getBoolean(PRELOAD_MODEL, false)
     }
 
     fun getVolume(): Float{

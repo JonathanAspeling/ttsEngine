@@ -16,7 +16,6 @@
     <string name="delete_language">Șterge limba</string>
     <string name="piper_models">Modele ”Piper”</string>
     <string name="coqui_models">Modele ”Coqui”</string>
-    <string name="app_name">Sintetizator vorbire SherpaTTS</string>
     <string name="apply_system_speed">Aplică setările sistemului (ritmul vorbirii/înălțime) pentru utilizarea ca motor TTS la nivel de sistem</string>
     <string name="volume">Volumul</string>
     <string name="one_model_per_language">Doar 1 model pentru o limbă!</string>

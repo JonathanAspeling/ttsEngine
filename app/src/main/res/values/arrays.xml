@@ -9,7 +9,6 @@
         <item>ca_ES-upc_ona-medium</item>
         <item>ca_ES-upc_ona-x_low</item>
         <item>ca_ES-upc_pau-x_low</item>
-        <item>ca_ES-upc_pau-x_low</item>
         <item>cs_CZ-jirka-low</item>
         <item>cs_CZ-jirka-medium</item>
         <item>cy_GB-bu_tts-medium</item>
@@ -84,6 +83,8 @@
         <item>es_ES-sharvard-medium</item>
         <item>es_MX-ald-medium</item>
         <item>es_MX-claude-high</item>
+        <item>eu_ES-antton-medium</item>
+        <item>eu_ES-maider-medium</item>
         <item>fa_IR-amir-medium</item>
         <item>fa_IR-ganji-medium</item>
         <item>fa_IR-ganji_adabi-medium</item>
@@ -131,8 +132,10 @@
         <item>nl_BE-rdh-x_low</item>
         <item>nl_NL-dii-high</item>
         <item>nl_NL-miro-high</item>
+        <item>nl_NL-alex-medium</item>
         <item>no_NO-talesyntese-medium</item>
         <item>pl_PL-darkman-medium</item>
+        <item>pl_PL-bass-high</item>
         <item>pl_PL-gosia-medium</item>
         <item>pl_PL-jarvis_wg_glos-medium</item>
         <item>pl_PL-justyna_wg_glos-medium</item>
@@ -140,8 +143,8 @@
         <item>pl_PL-meski_wg_glos-medium</item>
         <item>pl_PL-zenski_wg_glos-medium</item>
         <item>pt_BR-cadu-medium</item>
-        <item>pt_BR-edresson-low</item>
         <item>pt_BR-dii-high</item>
+        <item>pt_BR-edresson-low</item>
         <item>pt_BR-faber-medium</item>
         <item>pt_BR-jeff-medium</item>
         <item>pt_BR-miro-high</item>
@@ -155,19 +158,25 @@
         <item>ru_RU-ruslan-medium</item>
         <item>sk_SK-lili-medium</item>
         <item>sl_SI-artur-medium</item>
+        <item>sq_AL-edon-medium</item>
         <item>sr_RS-serbski_institut-medium</item>
         <item>sv_SE-lisa-medium</item>
         <item>sv_SE-nst-medium</item>
+        <item>sv_SE-alma-medium</item>
         <item>sw_CD-lanfrica-medium</item>
         <item>tr_TR-dfki-medium</item>
         <item>tr_TR-fahrettin-medium</item>
         <item>tr_TR-fettah-medium</item>
+        <item>ku_TR-berfin_renas-medium</item>
         <item>uk_UA-lada-x_low</item>
         <item>uk_UA-ukrainian_tts-medium</item>
+        <item>ur_PK-fasih-medium</item>
         <item>vi_VN-25hours_single-low</item>
         <item>vi_VN-vais1000-medium</item>
         <item>vi_VN-vivos-x_low</item>
         <item>zh_CN-huayan-medium</item>
+        <item>zh_CN-xiao_ya-medium</item>
+        <item>zh_CN-chaowen-medium</item>
     </string-array>
 
     <string-array name="coqui_models">

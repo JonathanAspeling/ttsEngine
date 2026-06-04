@@ -2,6 +2,7 @@ package com.k2fsa.sherpa.onnx.tts.engine
 
 import android.media.AudioFormat
 import android.speech.tts.SynthesisCallback
+import com.k2fsa.sherpa.onnx.GenerationConfig
 import android.speech.tts.SynthesisRequest
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeechService
@@ -9,6 +10,11 @@ import android.util.Log
 
 
 class TtsService : TextToSpeechService() {
+
+    // Member variables to hold state for the callback
+    private var currentPitch = 100f
+    private var currentSynthesisCallback: SynthesisCallback? = null
+
     override fun onCreate() {
         Log.i(TAG, "onCreate tts service")
         super.onCreate()
@@ -43,7 +49,7 @@ class TtsService : TextToSpeechService() {
         val lang = _lang ?: ""
         Migrate.renameModelFolder(this)   //Rename model folder if "old" structure
         val preferenceHelper = PreferenceHelper(this)
-        return if (preferenceHelper.getCurrentLanguage().equals("")){
+        return if (preferenceHelper.getCurrentLanguage().equals("")) {
             TextToSpeech.LANG_MISSING_DATA
         } else {
             if (TtsEngine.getAvailableLanguages(this).contains(lang)) {
@@ -79,7 +85,7 @@ class TtsService : TextToSpeechService() {
 
         val preferenceHelper = PreferenceHelper(this)
 
-        if (preferenceHelper.applySystemSpeed()){
+        if (preferenceHelper.applySystemSpeed()) {
             pitch = request.pitch * 1.0f
             TtsEngine.speed.value = request.speechRate / pitch  //divide by pitch to compensate for pitch adjustment performed in ttsCallback
         }         // request.speechRate: System does not memorize different speeds for different languages
@@ -99,49 +105,62 @@ class TtsService : TextToSpeechService() {
             return
         }
 
-        val ttsCallback: (FloatArray) -> Int = fun(floatSamples): Int {
-            val samples: ByteArray
+        // Store state in member variables so the function reference can access them
+        currentPitch = pitch
+        currentSynthesisCallback = callback
 
-            if (pitch != 100f){  //if not default pitch, play samples faster or slower. Speed has already been compensated before generation, see above
-                val speedFactor = pitch / 100f
-                val newSampleCount = (floatSamples.size / speedFactor).toInt()
-                val newSamples = FloatArray(newSampleCount)
-
-                for (i in 0 until newSampleCount) {
-                    newSamples[i] = floatSamples[(i * speedFactor).toInt()] * TtsEngine.volume.value
-                }
-                // Convert the modified FloatArray to ByteArray
-                samples = floatArrayToByteArray(newSamples)
-            } else {
-                // Convert FloatArray to ByteArray
-                for (i in floatSamples.indices) {
-                    floatSamples[i] *= TtsEngine.volume.value
-                }
-                samples = floatArrayToByteArray(floatSamples)
-            }
-
-            val maxBufferSize: Int = callback.maxBufferSize
-            var offset = 0
-            while (offset < samples.size) {
-                val bytesToWrite = Math.min(maxBufferSize, samples.size - offset)
-                callback.audioAvailable(samples, offset, bytesToWrite)
-                offset += bytesToWrite
-            }
-
-            // 1 means to continue
-            // 0 means to stop
-            return 1
-        }
-
-        //Log.i(TAG, "text: $text")
-        tts.generateWithCallback(
+        // FIX: Use a function reference (::ttsCallback) instead of an inline lambda.
+        // This forces the Kotlin compiler to generate the correct JNI signature: ([F)Ljava/lang/Integer;
+        tts.generateWithConfigAndCallback(
             text = text,
-            sid = TtsEngine.speakerId.value,
-            speed = TtsEngine.speed.value,
-            callback = ttsCallback,
+            config = GenerationConfig(sid = TtsEngine.speakerId.value, speed = TtsEngine.speed.value),
+            callback = ::ttsCallback,
         )
 
         callback.done()
+
+        // Clear state after synthesis is complete
+        currentSynthesisCallback = null
+    }
+
+    // This MUST be a member function so we can use the ::ttsCallback reference
+    private fun ttsCallback(floatSamples: FloatArray): Int {
+        val cb = currentSynthesisCallback ?: return 0
+        val pitch = currentPitch
+
+        val samples: ByteArray
+
+        if (pitch != 100f) {   //if not default pitch, play samples faster or slower. Speed has already been compensated before generation, see above
+            val speedFactor = pitch / 100f
+            val newSampleCount = (floatSamples.size / speedFactor).toInt()
+            val newSamples = FloatArray(newSampleCount)
+
+            for (i in 0 until newSampleCount) {
+                newSamples[i] = floatSamples[(i * speedFactor).toInt()] * TtsEngine.volume.value
+            }
+            // Convert the modified FloatArray to ByteArray
+            samples = floatArrayToByteArray(newSamples)
+        } else {
+            // The floatSamples array is a fresh instance created by JNI for this callback,
+            // so modifying it in place is safe and avoids an extra allocation.
+            // Convert FloatArray to ByteArray
+            for (i in floatSamples.indices) {
+                floatSamples[i] *= TtsEngine.volume.value
+            }
+            samples = floatArrayToByteArray(floatSamples)
+        }
+
+        val maxBufferSize: Int = cb.maxBufferSize
+        var offset = 0
+        while (offset < samples.size) {
+            val bytesToWrite = Math.min(maxBufferSize, samples.size - offset)
+            cb.audioAvailable(samples, offset, bytesToWrite)
+            offset += bytesToWrite
+        }
+
+        // 1 means to continue
+        // 0 means to stop
+        return 1
     }
 
     private fun floatArrayToByteArray(audio: FloatArray): ByteArray {

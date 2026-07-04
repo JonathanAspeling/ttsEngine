@@ -70,4 +70,7 @@ class PreferenceHelper(context: Context) {
     fun getVolume(): Float{
         return sharedPreferences.getFloat(VOLUME,1.0f)
     }
+
+    fun isOnboardingShown(): Boolean = sharedPreferences.getBoolean("onboarding_shown", false)
+    fun setOnboardingShown() = sharedPreferences.edit().putBoolean("onboarding_shown", true).apply()
 }

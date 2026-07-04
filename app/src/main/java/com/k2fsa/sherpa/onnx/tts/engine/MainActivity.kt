@@ -65,6 +65,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.woheller69.freeDroidWarn.FreeDroidWarn
 import java.io.File
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.TextNormalizer
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.OnboardingDialog
 
 const val TAG = "sherpa-onnx-tts-engine"
 
@@ -101,6 +103,10 @@ class MainActivity : ComponentActivity() {
             TtsEngine.createTts(this, preferenceHelper.getCurrentLanguage()!!)
             initAudioTrack()
             setupDisplay(langDB, preferenceHelper)
+            if (!preferenceHelper.isOnboardingShown()) {
+                OnboardingDialog.show(this)
+                preferenceHelper.setOnboardingShown()
+            }
             ThemeUtil.setStatusBarAppearance(this)
             FreeDroidWarn.showWarningOnUpgrade(this, BuildConfig.VERSION_CODE)
             if (GithubStar.shouldShowStarDialog(this)) GithubStar.starDialog(
@@ -440,7 +446,13 @@ class MainActivity : ComponentActivity() {
                                             contentColor = colorResource(R.color.white)
                                         ),
                                         onClick = {
-                                            deleteLang(preferenceHelper.getCurrentLanguage())
+                                            android.app.AlertDialog.Builder(this@MainActivity)
+                                                .setMessage("Remove this voice model?")
+                                                .setPositiveButton(android.R.string.ok) { _, _ ->
+                                                    deleteLang(preferenceHelper.getCurrentLanguage())
+                                                }
+                                                .setNegativeButton(android.R.string.cancel, null)
+                                                .show()
                                         }) {
                                         Image(
                                             painter = painterResource(id = R.drawable.ic_delete_24dp),
@@ -537,6 +549,7 @@ class MainActivity : ComponentActivity() {
                                                 }
 
                                                 if (preferenceHelper.getStripSSML()) sampleText = TtsEngine.stripSsmlTags(sampleText)
+                                                sampleText = TextNormalizer.normalize(sampleText)
 
                                                 CoroutineScope(Dispatchers.Default).launch {
                                                     TtsEngine.tts!!.generateWithCallback(

@@ -39,7 +39,7 @@
         </activity>
 
         <service
-            android:name=".TtsService"
+            android:name=".praxis.PraxisTtsService"
             android:enabled="true"
             android:exported="true"
             android:label="@string/app_name">

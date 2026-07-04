@@ -9,7 +9,8 @@ import android.speech.tts.TextToSpeechService
 import android.util.Log
 
 
-class TtsService : TextToSpeechService() {
+// `open` added to allow PraxisTtsService subclass (praxis/PraxisTtsService.kt)
+open class TtsService : TextToSpeechService() {
 
     // Member variables to hold state for the callback
     private var currentPitch = 100f

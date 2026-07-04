@@ -38,14 +38,33 @@ internal object NumberNormalizer {
     // 1st 2nd 3rd … 31st (only 1–31; larger ordinals Piper handles adequately)
     private val ORDINAL = Regex("""\b([1-9]|[12]\d|3[01])(st|nd|rd|th)\b""", RegexOption.IGNORE_CASE)
 
+    // 50%  3.5%
+    private val PERCENTAGE = Regex("""(\d+(?:\.\d+)?)\s*%""")
+
+    // 1/2  3/4  (word boundaries so it doesn't fire inside dates or URLs)
+    private val FRACTION = Regex("""\b(\d+)/(\d+)\b""")
+
+    // 3.14  0.5  — lookbehind excludes matches after . or digit (e.g. 5.2 inside 1.5.2)
+    private val DECIMAL = Regex("""(?<![\d.])(\d+)\.(\d+)(?!\.\d)\b""")
+
     // 1,200  10,000  1,000,000
     private val COMMA_NUMBER = Regex("""\b(\d{1,3}(?:,\d{3})+)\b""")
+
+    private val COMMON_FRACTIONS = mapOf(
+        "1/2" to "a half",      "1/3" to "a third",     "2/3" to "two thirds",
+        "1/4" to "a quarter",   "3/4" to "three quarters",
+        "1/5" to "a fifth",     "2/5" to "two fifths",  "3/5" to "three fifths", "4/5" to "four fifths",
+        "1/8" to "an eighth",   "3/8" to "three eighths", "5/8" to "five eighths", "7/8" to "seven eighths"
+    )
 
     fun normalize(text: String): String = text
         .let { replaceIsoDates(it) }
         .let { replaceCurrency(it) }
+        .let { replacePercentages(it) }
         .let { replaceTime(it) }
         .let { replaceOrdinals(it) }
+        .let { replaceFractions(it) }
+        .let { replaceDecimals(it) }
         .let { replaceCommaNumbers(it) }
 
     private fun replaceIsoDates(text: String): String =
@@ -81,6 +100,37 @@ internal object NumberNormalizer {
         ORDINAL.replace(text) { m ->
             val n = m.groupValues[1].toIntOrNull() ?: return@replace m.value
             DAY_ORDINALS[n] ?: m.value
+        }
+
+    private fun replacePercentages(text: String): String =
+        PERCENTAGE.replace(text) { m ->
+            val value = m.groupValues[1]
+            val dot = value.indexOf('.')
+            if (dot == -1) {
+                val n = value.toLongOrNull() ?: return@replace m.value
+                "${numberToWords(n)} percent"
+            } else {
+                val intPart = value.substring(0, dot).toLongOrNull() ?: return@replace m.value
+                val fracWords = value.substring(dot + 1).map { numberToWords(it.toString().toLong()) }.joinToString(" ")
+                "${numberToWords(intPart)} point $fracWords percent"
+            }
+        }
+
+    private fun replaceFractions(text: String): String =
+        FRACTION.replace(text) { m ->
+            val key = "${m.groupValues[1]}/${m.groupValues[2]}"
+            COMMON_FRACTIONS[key] ?: run {
+                val num = m.groupValues[1].toLongOrNull() ?: return@replace m.value
+                val den = m.groupValues[2].toLongOrNull() ?: return@replace m.value
+                "${numberToWords(num)} over ${numberToWords(den)}"
+            }
+        }
+
+    private fun replaceDecimals(text: String): String =
+        DECIMAL.replace(text) { m ->
+            val intPart = m.groupValues[1].toLongOrNull() ?: return@replace m.value
+            val fracWords = m.groupValues[2].map { numberToWords(it.toString().toLong()) }.joinToString(" ")
+            "${numberToWords(intPart)} point $fracWords"
         }
 
     private fun replaceCommaNumbers(text: String): String =

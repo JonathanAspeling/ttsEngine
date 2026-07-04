@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.k2fsa.sherpa.onnx.tts.engine.databinding.ActivityManageLanguagesBinding
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.DownloadConfirm
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
@@ -65,13 +66,16 @@ class ManageLanguagesActivity  : AppCompatActivity() {
             val country = model.substring(3, 5)
             val lang = Locale(twoLetterCode).isO3Language
             val type = "vits-piper"
-            binding!!.piperModelList.visibility = View.GONE
-            binding!!.coquiModelList.visibility = View.GONE
-            binding!!.buttonTestVoices.visibility = View.GONE
-            binding!!.piperHeader.visibility = View.GONE
-            binding!!.coquiHeader.visibility = View.GONE
-            binding!!.downloadSize.setText("")
-            Downloader.downloadModels(this, binding, model, lang, country, type)
+            val onnxUrl = "https://huggingface.co/csukuangfj/$type-$model/resolve/main/$model.onnx"
+            DownloadConfirm.checkSizeAndConfirm(this, model, onnxUrl) {
+                binding!!.piperModelList.visibility = View.GONE
+                binding!!.coquiModelList.visibility = View.GONE
+                binding!!.buttonTestVoices.visibility = View.GONE
+                binding!!.piperHeader.visibility = View.GONE
+                binding!!.coquiHeader.visibility = View.GONE
+                binding!!.downloadSize.setText("")
+                Downloader.downloadModels(this, binding, model, lang, country, type)
+            }
         }
 
         binding!!.coquiModelList.adapter = coquiAdapter
@@ -81,13 +85,16 @@ class ManageLanguagesActivity  : AppCompatActivity() {
             val country = ""
             val lang = Locale(twoLetterCode).isO3Language
             val type = "vits-coqui"
-            binding!!.piperModelList.visibility = View.GONE
-            binding!!.coquiModelList.visibility = View.GONE
-            binding!!.buttonTestVoices.visibility = View.GONE
-            binding!!.piperHeader.visibility = View.GONE
-            binding!!.coquiHeader.visibility = View.GONE
-            binding!!.downloadSize.setText("")
-            Downloader.downloadModels(this, binding, model, lang, country, type)
+            val onnxUrl = "https://huggingface.co/csukuangfj/$type-$model/resolve/main/model.onnx"
+            DownloadConfirm.checkSizeAndConfirm(this, model, onnxUrl) {
+                binding!!.piperModelList.visibility = View.GONE
+                binding!!.coquiModelList.visibility = View.GONE
+                binding!!.buttonTestVoices.visibility = View.GONE
+                binding!!.piperHeader.visibility = View.GONE
+                binding!!.coquiHeader.visibility = View.GONE
+                binding!!.downloadSize.setText("")
+                Downloader.downloadModels(this, binding, model, lang, country, type)
+            }
         }
 
     }

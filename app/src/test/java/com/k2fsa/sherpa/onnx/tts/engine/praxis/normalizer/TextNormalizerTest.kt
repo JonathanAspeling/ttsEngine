@@ -58,6 +58,35 @@ class TextNormalizerTest {
     @Test fun `numberToWords thousand`() =
         assertEquals("one thousand two hundred", NumberNormalizer.numberToWords(1200))
 
+    @Test fun `percentage integer`() =
+        assertEquals("fifty percent", NumberNormalizer.normalize("50%"))
+
+    @Test fun `percentage decimal`() =
+        assertEquals("three point five percent", NumberNormalizer.normalize("3.5%"))
+
+    @Test fun `percentage one hundred`() =
+        assertEquals("one hundred percent sure", NumberNormalizer.normalize("100% sure"))
+
+    @Test fun `fraction half`() =
+        assertEquals("a half", NumberNormalizer.normalize("1/2"))
+
+    @Test fun `fraction three quarters`() =
+        assertEquals("three quarters", NumberNormalizer.normalize("3/4"))
+
+    @Test fun `fraction uncommon`() =
+        assertEquals("five over seven", NumberNormalizer.normalize("5/7"))
+
+    @Test fun `decimal simple`() =
+        assertEquals("three point one four", NumberNormalizer.normalize("3.14"))
+
+    @Test fun `decimal zero point`() =
+        assertEquals("zero point five", NumberNormalizer.normalize("0.5"))
+
+    @Test fun `decimal version number not expanded`() {
+        // 1.5.2 should not be touched — the lookahead (?!\.\d) prevents it
+        assertEquals("v1.5.2", NumberNormalizer.normalize("v1.5.2"))
+    }
+
     // ── AbbreviationExpander ─────────────────────────────────────────────────
 
     @Test fun `Dr expansion`() =

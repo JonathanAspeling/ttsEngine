@@ -73,4 +73,7 @@ class PreferenceHelper(context: Context) {
 
     fun isOnboardingShown(): Boolean = sharedPreferences.getBoolean("onboarding_shown", false)
     fun setOnboardingShown() = sharedPreferences.edit().putBoolean("onboarding_shown", true).apply()
+
+    fun getPitch(): Float = sharedPreferences.getFloat("pitch", 1.0f)
+    fun setPitch(pitch: Float) = sharedPreferences.edit().putFloat("pitch", pitch).apply()
 }

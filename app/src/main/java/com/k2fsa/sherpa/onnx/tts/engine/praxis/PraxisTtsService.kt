@@ -3,6 +3,7 @@ package com.k2fsa.sherpa.onnx.tts.engine.praxis
 import android.os.Bundle
 import android.speech.tts.SynthesisCallback
 import android.speech.tts.SynthesisRequest
+import com.k2fsa.sherpa.onnx.tts.engine.PreferenceHelper
 import com.k2fsa.sherpa.onnx.tts.engine.TtsService
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.TextNormalizer
 
@@ -22,6 +23,7 @@ class PraxisTtsService : TtsService() {
             super.onSynthesizeText(null, callback)
             return
         }
+        praxisPitch = PreferenceHelper(this).getPitch() * 100f
         val raw = request.charSequenceText.toString()
         val normalized = TextNormalizer.normalize(raw)
         val effective = if (normalized != raw) patchRequest(request, normalized) else request

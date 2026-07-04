@@ -16,6 +16,10 @@ open class TtsService : TextToSpeechService() {
     private var currentPitch = 100f
     private var currentSynthesisCallback: SynthesisCallback? = null
 
+    // Subclasses (e.g. PraxisTtsService) may set this before calling super to override pitch
+    // when the "apply system settings" checkbox is off. 100f = no shift.
+    protected var praxisPitch = 100f
+
     override fun onCreate() {
         Log.i(TAG, "onCreate tts service")
         super.onCreate()
@@ -89,6 +93,8 @@ open class TtsService : TextToSpeechService() {
         if (preferenceHelper.applySystemSpeed()) {
             pitch = request.pitch * 1.0f
             TtsEngine.speed.value = request.speechRate / pitch  //divide by pitch to compensate for pitch adjustment performed in ttsCallback
+        } else if (praxisPitch != 100f) {
+            pitch = praxisPitch
         }         // request.speechRate: System does not memorize different speeds for different languages
 
         var text = request.charSequenceText.toString()

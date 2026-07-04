@@ -175,6 +175,7 @@ class MainActivity : ComponentActivity() {
                     }) {
                     Box(modifier = Modifier.padding(it)) {
                         var sampleText by remember { mutableStateOf(getSampleText(TtsEngine.lang ?: "")) }
+                    var pitchValue by remember { mutableStateOf(preferenceHelper.getPitch()) }
                         val numLanguages = langDB.allInstalledLanguages.size
                         val allLanguages = langDB.allInstalledLanguages
                         var currentLanguage = allLanguages.indexOfFirst { it.lang == preferenceHelper.getCurrentLanguage()!! }
@@ -208,6 +209,30 @@ class MainActivity : ComponentActivity() {
                                         )
                                     },
                                     valueRange = 0.2F..3.0F,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = colorResource(R.color.primaryDark),
+                                        activeTrackColor = colorResource(R.color.primaryDark)
+                                    )
+                                )
+                            }
+
+                            item {
+                                Text(
+                                    getString(R.string.pitch) + " " + String.format(
+                                        "%.1f",
+                                        pitchValue
+                                    )
+                                )
+                            }
+                            item {
+                                Slider(
+                                    value = pitchValue,
+                                    onValueChange = { pitchValue = it },
+                                    onValueChangeFinished = {
+                                        preferenceHelper.setPitch(pitchValue)
+                                    },
+                                    valueRange = 0.5F..2.0F,
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = SliderDefaults.colors(
                                         thumbColor = colorResource(R.color.primaryDark),

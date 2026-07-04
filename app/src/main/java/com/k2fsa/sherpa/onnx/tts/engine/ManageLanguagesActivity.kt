@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.k2fsa.sherpa.onnx.tts.engine.databinding.ActivityManageLanguagesBinding
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.DownloadConfirm
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.ModelCardAdapter
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
@@ -42,6 +43,17 @@ class ManageLanguagesActivity  : AppCompatActivity() {
         val installedLanguages = db.allInstalledLanguages
         val installedLangCodes = installedLanguages.map { it.lang }
 
+        val storageBytes = installedLanguages.sumOf { lang ->
+            val dir = File(getExternalFilesDir(null), "${lang.lang}${lang.country}")
+            if (dir.exists()) dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
+        }
+        if (storageBytes > 0) {
+            val count = installedLanguages.size
+            binding!!.storageIndicator.text =
+                "$count voice${if (count != 1) "s" else ""} installed · ${DownloadConfirm.formatBytes(storageBytes)} used"
+            binding!!.storageIndicator.visibility = View.VISIBLE
+        }
+
         val showPiperModels = mutableListOf<String>()
         for(model in allPiperModels){
             val twoLetterCode: String = model.split("_").get(0)
@@ -56,8 +68,8 @@ class ManageLanguagesActivity  : AppCompatActivity() {
             if (!installedLangCodes.contains(lang)) showCoquiModels.add(model)
         }
 
-        val piperAdapter = ArrayAdapter(this, R.layout.list_item, R.id.text_view, showPiperModels)
-        val coquiAdapter = ArrayAdapter(this, R.layout.list_item, R.id.text_view, showCoquiModels)
+        val piperAdapter = ModelCardAdapter(this, showPiperModels, "Piper")
+        val coquiAdapter = ModelCardAdapter(this, showCoquiModels, "Coqui")
 
         binding!!.piperModelList.adapter = piperAdapter
         binding!!.piperModelList.setOnItemClickListener { parent, view, position, id ->

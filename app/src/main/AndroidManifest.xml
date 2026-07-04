@@ -68,6 +68,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".praxis.ui.PronunciationActivity"
+            android:theme="@style/Theme.SherpaOnnxTtsEngine"
+            android:exported="false" />
+        <activity
             android:name=".ManageLanguagesActivity"
             android:theme="@style/Theme.SherpaOnnxTtsEngine"
             android:screenOrientation="portrait"

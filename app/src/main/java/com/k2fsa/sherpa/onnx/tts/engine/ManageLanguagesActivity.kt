@@ -4,13 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.k2fsa.sherpa.onnx.tts.engine.databinding.ActivityManageLanguagesBinding
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.DownloadConfirm
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.ModelCardAdapter
@@ -18,26 +19,28 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
 
-class ManageLanguagesActivity  : AppCompatActivity() {
+class ManageLanguagesActivity : AppCompatActivity() {
     private var binding: ActivityManageLanguagesBinding? = null
 
-    // URIs for selected files
     private var modelFileUri: Uri? = null
     private var tokensFileUri: Uri? = null
-    
-    // Store lang_code for later use
     private var langCodeForInstallation: String = ""
-
     private var langCode: String = ""
     private var modelName: String = ""
+
+    private val allPiperModels = mutableListOf<String>()
+    private val allCoquiModels = mutableListOf<String>()
+    private var showPiperModels = mutableListOf<String>()
+    private var showCoquiModels = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityManageLanguagesBinding.inflate(layoutInflater)
         setContentView(binding!!.root)
         ThemeUtil.setStatusBarAppearance(this)
-        val allPiperModels: Array<String> = resources.getStringArray(R.array.piper_models)
-        val allCoquiModels: Array<String> = resources.getStringArray(R.array.coqui_models)
+
+        val piperRes: Array<String> = resources.getStringArray(R.array.piper_models)
+        val coquiRes: Array<String> = resources.getStringArray(R.array.coqui_models)
 
         val db = LangDB.getInstance(this)
         val installedLanguages = db.allInstalledLanguages
@@ -54,61 +57,89 @@ class ManageLanguagesActivity  : AppCompatActivity() {
             binding!!.storageIndicator.visibility = View.VISIBLE
         }
 
-        val showPiperModels = mutableListOf<String>()
-        for(model in allPiperModels){
-            val twoLetterCode: String = model.split("_").get(0)
-            val lang = Locale(twoLetterCode).isO3Language
-            if (!installedLangCodes.contains(lang)) showPiperModels.add(model)
+        for (model in piperRes) {
+            val lang = Locale(model.split("_")[0]).isO3Language
+            if (!installedLangCodes.contains(lang)) allPiperModels.add(model)
         }
-
-        val showCoquiModels = mutableListOf<String>()
-        for(model in allCoquiModels){
-            val twoLetterCode: String = model.split("_").get(0)
-            val lang = Locale(twoLetterCode).isO3Language
-            if (!installedLangCodes.contains(lang)) showCoquiModels.add(model)
+        for (model in coquiRes) {
+            val lang = Locale(model.split("_")[0]).isO3Language
+            if (!installedLangCodes.contains(lang)) allCoquiModels.add(model)
         }
+        showPiperModels = allPiperModels.toMutableList()
+        showCoquiModels = allCoquiModels.toMutableList()
 
-        val piperAdapter = ModelCardAdapter(this, showPiperModels, "Piper")
-        val coquiAdapter = ModelCardAdapter(this, showCoquiModels, "Coqui")
+        setupFilterChips()
+        refreshAdapters()
+        setupClickListeners()
+    }
 
-        binding!!.piperModelList.adapter = piperAdapter
-        binding!!.piperModelList.setOnItemClickListener { parent, view, position, id ->
-            val model = showPiperModels.get(position)
-            val twoLetterCode = model.substring(0, 2)
-            val country = model.substring(3, 5)
-            val lang = Locale(twoLetterCode).isO3Language
+    private fun setupFilterChips() {
+        val langCodes = (allPiperModels + allCoquiModels)
+            .map { it.substring(0, 2) }.distinct().sorted()
+        if (langCodes.size < 2) return
+
+        val chipGroup = binding!!.filterChipGroup
+        langCodes.forEach { code ->
+            val chip = Chip(this).apply {
+                text = Locale(code).displayLanguage
+                isCheckable = true
+                tag = code
+            }
+            chipGroup.addView(chip)
+        }
+        chipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            val code = if (checkedIds.isEmpty()) null
+                else (group.findViewById<Chip>(checkedIds[0]))?.tag as? String
+            applyFilter(code)
+        }
+        binding!!.filterScroll.visibility = View.VISIBLE
+    }
+
+    private fun applyFilter(langCode: String?) {
+        showPiperModels = if (langCode == null) allPiperModels.toMutableList()
+            else allPiperModels.filter { it.startsWith(langCode) }.toMutableList()
+        showCoquiModels = if (langCode == null) allCoquiModels.toMutableList()
+            else allCoquiModels.filter { it.startsWith(langCode) }.toMutableList()
+        refreshAdapters()
+    }
+
+    private fun refreshAdapters() {
+        binding!!.piperModelList.adapter = ModelCardAdapter(this, showPiperModels, "Piper")
+        binding!!.coquiModelList.adapter = ModelCardAdapter(this, showCoquiModels, "Coqui")
+    }
+
+    private fun hideListsForDownload() {
+        binding!!.piperModelList.visibility = View.GONE
+        binding!!.coquiModelList.visibility = View.GONE
+        binding!!.buttonTestVoices.visibility = View.GONE
+        binding!!.piperHeader.visibility = View.GONE
+        binding!!.coquiHeader.visibility = View.GONE
+        binding!!.filterScroll.visibility = View.GONE
+        binding!!.downloadSize.setText("")
+    }
+
+    private fun setupClickListeners() {
+        binding!!.piperModelList.setOnItemClickListener { _, _, position, _ ->
+            val model = showPiperModels[position]
             val type = "vits-piper"
             val onnxUrl = "https://huggingface.co/csukuangfj/$type-$model/resolve/main/$model.onnx"
+            val country = model.substring(3, 5)
+            val lang = Locale(model.substring(0, 2)).isO3Language
             DownloadConfirm.checkSizeAndConfirm(this, model, onnxUrl) {
-                binding!!.piperModelList.visibility = View.GONE
-                binding!!.coquiModelList.visibility = View.GONE
-                binding!!.buttonTestVoices.visibility = View.GONE
-                binding!!.piperHeader.visibility = View.GONE
-                binding!!.coquiHeader.visibility = View.GONE
-                binding!!.downloadSize.setText("")
+                hideListsForDownload()
                 Downloader.downloadModels(this, binding, model, lang, country, type)
             }
         }
-
-        binding!!.coquiModelList.adapter = coquiAdapter
-        binding!!.coquiModelList.setOnItemClickListener { parent, view, position, id ->
-            val model = showCoquiModels.get(position)
-            val twoLetterCode = model.substring(0, 2)
-            val country = ""
-            val lang = Locale(twoLetterCode).isO3Language
+        binding!!.coquiModelList.setOnItemClickListener { _, _, position, _ ->
+            val model = showCoquiModels[position]
             val type = "vits-coqui"
             val onnxUrl = "https://huggingface.co/csukuangfj/$type-$model/resolve/main/model.onnx"
+            val lang = Locale(model.substring(0, 2)).isO3Language
             DownloadConfirm.checkSizeAndConfirm(this, model, onnxUrl) {
-                binding!!.piperModelList.visibility = View.GONE
-                binding!!.coquiModelList.visibility = View.GONE
-                binding!!.buttonTestVoices.visibility = View.GONE
-                binding!!.piperHeader.visibility = View.GONE
-                binding!!.coquiHeader.visibility = View.GONE
-                binding!!.downloadSize.setText("")
-                Downloader.downloadModels(this, binding, model, lang, country, type)
+                hideListsForDownload()
+                Downloader.downloadModels(this, binding, model, lang, "", type)
             }
         }
-
     }
 
     fun startMain(view: View) {

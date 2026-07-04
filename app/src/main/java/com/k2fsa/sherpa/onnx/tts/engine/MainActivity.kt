@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -65,8 +66,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.woheller69.freeDroidWarn.FreeDroidWarn
 import java.io.File
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.PronunciationOverrides
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.TextNormalizer
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.OnboardingDialog
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.ui.PronunciationActivity
 
 const val TAG = "sherpa-onnx-tts-engine"
 
@@ -98,6 +101,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         preferenceHelper = PreferenceHelper(this)
         langDB = LangDB.getInstance(this)
+        PronunciationOverrides.init("${filesDir.absolutePath}/pronunciations.txt")
         Migrate.renameModelFolder(this)   //Rename model folder if "old" structure
         if (!preferenceHelper.getCurrentLanguage().equals("")) {
             TtsEngine.createTts(this, preferenceHelper.getCurrentLanguage()!!)
@@ -140,6 +144,16 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(title = { Text("SherpaTTS") },
                             actions = {
+                                IconButton(
+                                    onClick = {
+                                        startActivity(Intent(this@MainActivity, PronunciationActivity::class.java))
+                                    },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        contentColor = colorResource(R.color.primaryDark)
+                                    )
+                                ) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Pronunciation overrides")
+                                }
                                 IconButton(
                                     onClick = {
                                         startActivity(
@@ -574,7 +588,7 @@ class MainActivity : ComponentActivity() {
                                                 }
 
                                                 if (preferenceHelper.getStripSSML()) sampleText = TtsEngine.stripSsmlTags(sampleText)
-                                                sampleText = TextNormalizer.normalize(sampleText)
+                                                sampleText = TextNormalizer.normalize(PronunciationOverrides.apply(sampleText))
 
                                                 CoroutineScope(Dispatchers.Default).launch {
                                                     TtsEngine.tts!!.generateWithCallback(

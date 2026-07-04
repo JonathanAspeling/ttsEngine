@@ -5,6 +5,7 @@ import android.speech.tts.SynthesisCallback
 import android.speech.tts.SynthesisRequest
 import com.k2fsa.sherpa.onnx.tts.engine.PreferenceHelper
 import com.k2fsa.sherpa.onnx.tts.engine.TtsService
+import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.PronunciationOverrides
 import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.TextNormalizer
 
 /**
@@ -18,6 +19,11 @@ import com.k2fsa.sherpa.onnx.tts.engine.praxis.normalizer.TextNormalizer
  */
 class PraxisTtsService : TtsService() {
 
+    override fun onCreate() {
+        super.onCreate()
+        PronunciationOverrides.init("${filesDir.absolutePath}/pronunciations.txt")
+    }
+
     override fun onSynthesizeText(request: SynthesisRequest?, callback: SynthesisCallback?) {
         if (request == null) {
             super.onSynthesizeText(null, callback)
@@ -25,7 +31,7 @@ class PraxisTtsService : TtsService() {
         }
         praxisPitch = PreferenceHelper(this).getPitch() * 100f
         val raw = request.charSequenceText.toString()
-        val normalized = TextNormalizer.normalize(raw)
+        val normalized = TextNormalizer.normalize(PronunciationOverrides.apply(raw))
         val effective = if (normalized != raw) patchRequest(request, normalized) else request
         super.onSynthesizeText(effective, callback)
     }

@@ -165,4 +165,32 @@ class TextNormalizerTest {
 
     @Test fun `plain text unchanged`() =
         assertEquals("hello world", TextNormalizer.normalize("hello world"))
+
+    // ── PronunciationOverrides ───────────────────────────────────────────────
+
+    @Test fun `pronunciation override applied`() {
+        PronunciationOverrides.loadForTest(listOf("nginx" to "engine X"))
+        assertEquals("run engine X now", PronunciationOverrides.apply("run nginx now"))
+    }
+
+    @Test fun `pronunciation override case insensitive`() {
+        PronunciationOverrides.loadForTest(listOf("kubectl" to "kube cuttle"))
+        assertEquals("use kube cuttle here", PronunciationOverrides.apply("use Kubectl here"))
+    }
+
+    @Test fun `pronunciation override word boundary`() {
+        PronunciationOverrides.loadForTest(listOf("go" to "golang"))
+        assertEquals("golang is great but not golang-lang", PronunciationOverrides.apply("go is great but not go-lang"))
+    }
+
+    @Test fun `pronunciation override empty map`() {
+        PronunciationOverrides.loadForTest(emptyList())
+        assertEquals("nginx unchanged", PronunciationOverrides.apply("nginx unchanged"))
+    }
+
+    @Test fun `longer override wins over shorter`() {
+        PronunciationOverrides.loadForTest(listOf("go" to "golang", "go test" to "golang test"))
+        val result = PronunciationOverrides.apply("go test")
+        assertEquals("golang test", result)
+    }
 }
